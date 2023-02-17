@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useViewerConnection, useViewerRecord } from "@self.id/react";
 import { EthereumAuthProvider } from "@self.id/web";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [name, setName] = useState("");
@@ -10,6 +10,8 @@ export default function Home() {
   const [username, setUsername] = useState("");
 
   const [connection, connect, disconnect] = useViewerConnection();
+
+  const [isWindow, setIsWindow] = useState(null);
 
   const record = useViewerRecord("basicProfile");
 
@@ -23,7 +25,7 @@ export default function Home() {
 
   async function connectAccount() {
     const authProvider = await createAuthProvider();
-    await connect(authProvider);
+    connect(authProvider);
   }
 
   async function updateProfile() {
@@ -36,6 +38,12 @@ export default function Home() {
       username,
     });
   }
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsWindow(window);
+    }
+  }, [record]);
 
   return (
     <>
@@ -134,11 +142,11 @@ export default function Home() {
                     >
                       Disconnect
                     </button>
-                  ) : typeof window !== "undefined" && "ethereum" in window ? (
+                  ) : isWindow && "ethereum" in window ? (
                     <button
                       className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
                       type="button"
-                      disabled={connection.status === "connecting" || !record}
+                      disabled={connection.status === "connecting"}
                       onClick={() => {
                         connectAccount();
                       }}
@@ -156,27 +164,7 @@ export default function Home() {
               </form>
             </div>
 
-            {record && record.isLoading && (
-              <div className="mt-8">
-                <div className="bg-white p-8 rounded-lg shadow-lg">
-                  <p>Loading...</p>
-                </div>
-              </div>
-            )}
-
-            {record &&
-              !record.content &&
-              !record.isLoading &&
-              connection &&
-              connection.status === "connected" && (
-                <div className="mt-8">
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <p>No profile found.</p>
-                  </div>
-                </div>
-              )}
-
-            {record && record.content && (
+            {connection.status === "connected" && record && record.content ? (
               <div className="flex flex-col items-center mt-8">
                 <h2 className="text-3xl font-bold mb-6 text-gray-900">
                   Profile Information
@@ -207,6 +195,12 @@ export default function Home() {
                       {record.content.username || "No username set"}
                     </span>
                   </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-8">
+                <div className="bg-white p-8 rounded-lg shadow-lg">
+                  <p>No profile found.</p>
                 </div>
               </div>
             )}
